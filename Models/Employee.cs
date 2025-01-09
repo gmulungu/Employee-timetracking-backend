@@ -3,14 +3,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EmployeeTimeTrackingBackend.Models
 {
+    
     public class Employee
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Auto-generate EmployeeNo
         public int EmployeeNo { get; set; }
+        //required
 
         [Required]
         public string FirstName { get; set; }
+        //required
 
         [Required]
         public string LastName { get; set; }

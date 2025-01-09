@@ -88,7 +88,7 @@ namespace EmployeeTimeTrackingBackend.Controllers
             return Ok(employee); 
         }
 
-        // Add a new employee
+        // Add a new employee to the database
         [HttpPost]
         public IActionResult AddEmployee([FromBody] Employee employee)
         {
@@ -117,7 +117,7 @@ namespace EmployeeTimeTrackingBackend.Controllers
             }
         }
 
-        // Update an existing employee
+        // Update an existing employee in the db
         [HttpPut("{employeeNo}")]
         public IActionResult UpdateEmployee(int employeeNo, [FromBody] Employee employee)
         {
@@ -151,7 +151,7 @@ namespace EmployeeTimeTrackingBackend.Controllers
             return Ok(new { Message = "Employee updated successfully." });
         }
 
-        // Delete an employee by EmployeeNo
+        // Delete an employee by EmployeeNo in db
         [HttpDelete("{employeeNo}")]
         public IActionResult DeleteEmployee(int employeeNo)
         {

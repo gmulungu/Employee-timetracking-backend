@@ -18,7 +18,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-
+//Add CORS policy
 app.UseCors("AllowAngularApp");
 
 
