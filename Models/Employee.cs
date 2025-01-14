@@ -35,9 +35,6 @@ namespace EmployeeTimeTrackingBackend.Models
 
         public int? ManagerId { get; set; }  
 
-        public Employee()
-        {
-            ManagerId = null;
-        }
+      
     }
 }

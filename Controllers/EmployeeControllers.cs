@@ -1,7 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using EmployeeTimeTrackingBackend.Models;
-using System.Collections.Generic;
+﻿using EmployeeTimeTrackingBackend.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeTimeTrackingBackend.Controllers
 {
@@ -9,168 +7,93 @@ namespace EmployeeTimeTrackingBackend.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly Database _database = new Database();
+        private readonly IEmployeeService _employeeService;
 
-        // Get all employees, including manager flag
+        public EmployeeController(IEmployeeService employeeService)
+        {
+            _employeeService = employeeService;
+        }
+
         [HttpGet]
-        public IActionResult GetAllEmployees()
+        public async Task<IActionResult> GetAllEmployees()
         {
-            var employees = new List<Employee>();
-            using (var connection = _database.GetConnection())
+            try
             {
-                var query = "SELECT * FROM Employees";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            employees.Add(new Employee
-                            {
-                                EmployeeNo = reader.GetInt32(reader.GetOrdinal("EmployeeNo")),
-                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                                Username = reader.GetString(reader.GetOrdinal("Username")),
-                                CellPhoneNumber = reader.GetString(reader.GetOrdinal("CellPhoneNumber")),
-                                Position = reader.GetString(reader.GetOrdinal("Position")),
-                                IsManager = reader.IsDBNull(reader.GetOrdinal("IsManager")) ? (bool?)null : reader.GetBoolean(reader.GetOrdinal("IsManager")),
-                                IsDisabled = reader.GetBoolean(reader.GetOrdinal("IsDisabled")),
-                                PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-                                ManagerId = reader.IsDBNull(reader.GetOrdinal("ManagerId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ManagerId"))
-                            });
-                        }
-                    }
-                }
+                var employees = await _employeeService.GetAllEmployeesAsync();
+                return Ok(employees);
             }
-            return Ok(employees);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching employees.", Error = ex.Message });
+            }
         }
 
-        
         [HttpGet("{employeeNo}")]
-        public IActionResult GetEmployee(int employeeNo)
+        public async Task<IActionResult> GetEmployee(int employeeNo)
         {
-            Employee employee = null;
-            using (var connection = _database.GetConnection())
+            try
             {
-                var query = "SELECT * FROM Employees WHERE EmployeeNo = @EmployeeNo";
-                using (var command = new SqlCommand(query, connection))
+                var employee = await _employeeService.GetEmployeeByIdAsync(employeeNo);
+                if (employee == null)
                 {
-                    command.Parameters.AddWithValue("@EmployeeNo", employeeNo);
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            employee = new Employee
-                            {
-                                EmployeeNo = reader.GetInt32(reader.GetOrdinal("EmployeeNo")),
-                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                                Username = reader.GetString(reader.GetOrdinal("Username")),
-                                CellPhoneNumber = reader.GetString(reader.GetOrdinal("CellPhoneNumber")),
-                                Position = reader.GetString(reader.GetOrdinal("Position")),
-                                IsManager = reader.IsDBNull(reader.GetOrdinal("IsManager")) ? (bool?)null : reader.GetBoolean(reader.GetOrdinal("IsManager")),
-                                IsDisabled = reader.GetBoolean(reader.GetOrdinal("IsDisabled")),
-                                PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-                                ManagerId = reader.IsDBNull(reader.GetOrdinal("ManagerId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ManagerId"))
-                            };
-                        }
-                    }
+                    return NotFound(new { Message = "Employee not found" });
                 }
+                return Ok(employee);
             }
-            
-            if (employee == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                return StatusCode(500, new { Message = "An error occurred while fetching the employee.", Error = ex.Message });
             }
-            
-
-            // Return the employee details if found
-            return Ok(employee); 
         }
 
-        // Add a new employee to the database
         [HttpPost]
-        public IActionResult AddEmployee([FromBody] Employee employee)
+        public async Task<IActionResult> AddEmployee([FromBody] EmployeeDto employeeDto)
         {
-            using (var connection = _database.GetConnection())
+            try
             {
-                var query = "INSERT INTO Employees (FirstName, LastName, Username, CellPhoneNumber, Position, IsManager, IsDisabled, PasswordHash, ManagerId) " +
-                            "OUTPUT INSERTED.EmployeeNo " + // this is the autogenerated EmployeeNo
-                            "VALUES (@FirstName, @LastName, @Username, @CellPhoneNumber, @Position, @IsManager, @IsDisabled, @PasswordHash, @ManagerId)";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@FirstName", employee.FirstName);
-                    command.Parameters.AddWithValue("@LastName", employee.LastName);
-                    command.Parameters.AddWithValue("@Username", employee.Username);
-                    command.Parameters.AddWithValue("@CellPhoneNumber", employee.CellPhoneNumber);
-                    command.Parameters.AddWithValue("@Position", employee.Position);
-                    command.Parameters.AddWithValue("@IsManager", (object)employee.IsManager ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@IsDisabled", employee.IsDisabled);
-                    command.Parameters.AddWithValue("@PasswordHash", employee.PasswordHash);
-                    command.Parameters.AddWithValue("@ManagerId", (object)employee.ManagerId ?? DBNull.Value);
-
-                    // Get the autogenerated EmployeeNo
-                    var generatedId = (int)command.ExecuteScalar();
-
-                    return Ok(new { Message = "Employee added successfully.", EmployeeNo = generatedId });
-                }
+                var employee = await _employeeService.AddEmployeeAsync(employeeDto);
+                return Ok(new { Message = "Employee added successfully", EmployeeNo = employee.EmployeeNo });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while adding the employee.", Error = ex.Message });
             }
         }
 
-        // Update an existing employee in the db
         [HttpPut("{employeeNo}")]
-        public IActionResult UpdateEmployee(int employeeNo, [FromBody] Employee employee)
+        public async Task<IActionResult> UpdateEmployee(int employeeNo, [FromBody] EmployeeDto employeeDto)
         {
-            using (var connection = _database.GetConnection())
+            try
             {
-                var query = "UPDATE Employees SET FirstName = @FirstName, LastName = @LastName, Username = @Username, " +
-                            "CellPhoneNumber = @CellPhoneNumber, Position = @Position, IsManager = @IsManager, " +
-                            "IsDisabled = @IsDisabled, PasswordHash = @PasswordHash, ManagerId = @ManagerId " +
-                            "WHERE EmployeeNo = @EmployeeNo";
-                using (var command = new SqlCommand(query, connection))
+                var employee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
+                if (employee == null)
                 {
-                    command.Parameters.AddWithValue("@EmployeeNo", employeeNo);
-                    command.Parameters.AddWithValue("@FirstName", employee.FirstName);
-                    command.Parameters.AddWithValue("@LastName", employee.LastName);
-                    command.Parameters.AddWithValue("@Username", employee.Username);
-                    command.Parameters.AddWithValue("@CellPhoneNumber", employee.CellPhoneNumber);
-                    command.Parameters.AddWithValue("@Position", employee.Position);
-                    command.Parameters.AddWithValue("@IsManager", (object)employee.IsManager ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@IsDisabled", employee.IsDisabled);
-                    command.Parameters.AddWithValue("@PasswordHash", employee.PasswordHash);
-                    command.Parameters.AddWithValue("@ManagerId", (object)employee.ManagerId ?? DBNull.Value);
-
-                    var rowsAffected = command.ExecuteNonQuery();
-                    if (rowsAffected == 0)
-                    {
-                        return NotFound(); 
-                    }
+                    return NotFound(new { Message = "Employee not found" });
                 }
+                return Ok(new { Message = "Employee updated successfully" });
             }
-
-            return Ok(new { Message = "Employee updated successfully." });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while updating the employee.", Error = ex.Message });
+            }
         }
 
-        // Delete an employee by EmployeeNo in db
         [HttpDelete("{employeeNo}")]
-        public IActionResult DeleteEmployee(int employeeNo)
+        public async Task<IActionResult> DeleteEmployee(int employeeNo)
         {
-            using (var connection = _database.GetConnection())
+            try
             {
-                var query = "DELETE FROM Employees WHERE EmployeeNo = @EmployeeNo";
-                using (var command = new SqlCommand(query, connection))
+                var result = await _employeeService.DeleteEmployeeAsync(employeeNo);
+                if (!result)
                 {
-                    command.Parameters.AddWithValue("@EmployeeNo", employeeNo);
-                    var rowsAffected = command.ExecuteNonQuery();
-                    
-                    if (rowsAffected == 0)
-                    {
-                        return NotFound(new { Message = "Unfortunately Employee not found" });
-                    }
+                    return NotFound(new { Message = "Employee not found" });
                 }
+                return Ok(new { Message = "Employee deleted successfully" });
             }
-
-            return Ok(new { Message = "Employee deleted successfully." });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while deleting the employee.", Error = ex.Message });
+            }
         }
     }
 }
