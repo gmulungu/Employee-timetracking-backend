@@ -7,7 +7,7 @@ public class EmployeeDto
     public string CellPhoneNumber { get; set; }
     public string Position { get; set; }
     public bool? IsManager { get; set; }
-    public bool IsDisabled { get; set; }
+    public bool? IsDisabled { get; set; }
     public string PasswordHash { get; set; }
     public int? ManagerId { get; set; }
 }
