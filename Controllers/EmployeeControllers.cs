@@ -65,6 +65,12 @@ namespace EmployeeTimeTrackingBackend.Controllers
         {
             try
             {
+                
+                if (string.IsNullOrEmpty(employeeDto.PlainPassword))
+                {
+                    employeeDto.PlainPassword = null;  
+                }
+
                 var employee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
                 if (employee == null)
                 {
@@ -77,6 +83,7 @@ namespace EmployeeTimeTrackingBackend.Controllers
                 return StatusCode(500, new { Message = "An error occurred while updating the employee.", Error = ex.Message });
             }
         }
+
 
         [HttpDelete("{employeeNo}")]
         public async Task<IActionResult> DeleteEmployee(int employeeNo)

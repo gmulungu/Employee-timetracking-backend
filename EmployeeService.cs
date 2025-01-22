@@ -1,3 +1,4 @@
+using System.Text;
 using AutoMapper;
 using EmployeeTimeTrackingBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -39,10 +40,26 @@ namespace EmployeeTimeTrackingBackend.Services
 
         public async Task<EmployeeDto> AddEmployeeAsync(EmployeeDto employeeDto)
         {
-            var employee = _mapper.Map<Employee>(employeeDto);
-            _context.Employees.Add(employee);
+            // Ensure PlainPassword is provided for new employee
+            if (string.IsNullOrEmpty(employeeDto.PlainPassword))
+            {
+                throw new ArgumentException("PlainPassword is required for new employee.");
+            }
+
+            var newEmployee = _mapper.Map<Employee>(employeeDto);
+
+            // Generate random password if it's not provided
+            string plainPassword = employeeDto.PlainPassword ?? GenerateRandomPassword();
+            string hashedPassword = HashPassword(plainPassword);
+
+            newEmployee.PasswordHash = hashedPassword;
+
+            _context.Employees.Add(newEmployee);
             await _context.SaveChangesAsync();
-            return _mapper.Map<EmployeeDto>(employee);
+
+            Console.WriteLine($"Plain password for {employeeDto.EmployeeNo}: {plainPassword}");
+
+            return _mapper.Map<EmployeeDto>(newEmployee);
         }
 
         public async Task<EmployeeDto> UpdateEmployeeAsync(int employeeNo, EmployeeDto employeeDto)
@@ -50,8 +67,16 @@ namespace EmployeeTimeTrackingBackend.Services
             var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeNo == employeeNo);
             if (employee == null) return null;
 
+            // // Only update password if PlainPassword is provided
+            if (!string.IsNullOrEmpty(employeeDto.PlainPassword))
+            {
+                employee.PasswordHash = HashPassword(employeeDto.PlainPassword);
+            }
+
+            // Map the other fields
             _mapper.Map(employeeDto, employee);
             await _context.SaveChangesAsync();
+
             return _mapper.Map<EmployeeDto>(employee);
         }
 
@@ -62,7 +87,28 @@ namespace EmployeeTimeTrackingBackend.Services
 
             _context.Employees.Remove(employee);
             await _context.SaveChangesAsync();
+
             return true;
+        }
+//refering to the comment from PR; resolving the issue of a password autogenerating
+        private string GenerateRandomPassword()
+        {
+            const int passwordLength = 12;
+            const string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()";
+            var random = new Random();
+            var password = new StringBuilder();
+
+            for (int i = 0; i < passwordLength; i++)
+            {
+                password.Append(validChars[random.Next(validChars.Length)]);
+            }
+
+            return password.ToString();
+        }
+
+        private string HashPassword(string plainPassword)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(plainPassword);
         }
     }
 }

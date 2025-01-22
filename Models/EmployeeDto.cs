@@ -10,4 +10,6 @@ public class EmployeeDto
     public bool? IsDisabled { get; set; }
     public string PasswordHash { get; set; }
     public int? ManagerId { get; set; }
+    public bool isFirstLogin { get; set; }
+    public string? PlainPassword { get; set; }
 }
