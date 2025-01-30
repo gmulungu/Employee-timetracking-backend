@@ -3,14 +3,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EmployeeTimeTrackingBackend.Models
 {
+    
     public class Employee
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Auto-generate EmployeeNo
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] 
         public int EmployeeNo { get; set; }
+        //required
 
         [Required]
         public string FirstName { get; set; }
+        //required
 
         [Required]
         public string LastName { get; set; }
@@ -26,15 +29,14 @@ namespace EmployeeTimeTrackingBackend.Models
 
         public bool? IsManager { get; set; }  
         public bool IsDisabled { get; set; }
+        public bool IsFirstLogin { get; set; }
 
-        [Required]
+        
         public string PasswordHash { get; set; }  
+        // public string PlainPassword { get; set; }
 
         public int? ManagerId { get; set; }  
 
-        public Employee()
-        {
-            ManagerId = null;
-        }
+      
     }
 }
