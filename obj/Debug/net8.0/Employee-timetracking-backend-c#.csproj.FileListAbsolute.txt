@@ -185,3 +185,5 @@ C:\Users\geurschomm\Development\Employee-timetracking-backend-c#\obj\Debug\net8.
 C:\Users\geurschomm\Development\Employee-timetracking-backend-c#\obj\Debug\net8.0\Employee-timetracking-backend-c#.pdb
 C:\Users\geurschomm\Development\Employee-timetracking-backend-c#\obj\Debug\net8.0\Employee-timetracking-backend-c#.genruntimeconfig.cache
 C:\Users\geurschomm\Development\Employee-timetracking-backend-c#\obj\Debug\net8.0\ref\Employee-timetracking-backend-c#.dll
+C:\Users\geurschomm\Development\Employee-timetracking-backend-c#\bin\Debug\net8.0\BCrypt.Net-Next.dll
+C:\Users\geurschomm\Development\Employee-timetracking-backend-c#\bin\Debug\net8.0\Microsoft.Bcl.Memory.dll
