@@ -84,7 +84,7 @@ namespace EmployeeTimeTrackingBackend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var employee = await _employeeService.LoginAsync(loginDto.Username, loginDto.Password);
+            var employee = await _employeeService.LoginAsync(loginDto.employeeNo, loginDto.Password);
             if (employee == null)
             {
                 return Unauthorized("Invalid credentials.");

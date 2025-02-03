@@ -12,7 +12,7 @@ namespace EmployeeTimeTrackingBackend.Services
         Task<EmployeeDto> AddEmployeeAsync(EmployeeDto employeeDto);
         Task<EmployeeDto> UpdateEmployeeAsync(int employeeNo, EmployeeDto employeeDto);
         Task<bool> DeleteEmployeeAsync(int employeeNo);
-        Task<Employee> LoginAsync(string username, string password);
+        Task<Employee> LoginAsync(int employeeNo, string password);
         Task<(bool success, string message)> ClockInAsync(int employeeNo);
         Task<bool> ClockOutAsync(int employeeNo);
         Task<EmployeeDto> ChangePasswordAsync(int employeeNo, ChangePasswordDto changePasswordDto); 
@@ -152,10 +152,10 @@ namespace EmployeeTimeTrackingBackend.Services
         }
 
         // Login logic
-        public async Task<Employee> LoginAsync(string username, string password)
+        public async Task<Employee> LoginAsync(int employeeNo, string password)
         {
             // Fetch the employee by username
-            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Username == username);
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeNo == employeeNo);
             if (employee == null) return null; 
 
             try
