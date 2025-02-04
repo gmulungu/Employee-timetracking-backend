@@ -1,6 +1,7 @@
 ﻿using EmployeeTimeTrackingBackend.Models;
 using EmployeeTimeTrackingBackend.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EmployeeTimeTrackingBackend.Controllers
@@ -22,21 +23,49 @@ namespace EmployeeTimeTrackingBackend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees()
         {
-            var employees = await _employeeService.GetAllEmployeesAsync();
-            return Ok(employees);
+            try
+            {
+                var employees = await _employeeService.GetAllEmployeesAsync();
+
+                if (employees == null || !employees.Any())
+                {
+                    return NotFound(new { Message = "No employees found." });
+                }
+
+                return Ok(employees);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving employees: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while retrieving employees." });
+            }
         }
 
         // GET: api/employee/{id}
         [HttpGet("{employeeNo}")]
         public async Task<IActionResult> GetEmployeeById(int employeeNo)
         {
-            var employee = await _employeeService.GetEmployeeByIdAsync(employeeNo);
-            if (employee == null)
+            try
             {
-                return NotFound();
-            }
+                if (employeeNo <= 0)
+                {
+                    return BadRequest(new { Message = "Invalid employee number provided." });
+                }
 
-            return Ok(employee);
+                var employee = await _employeeService.GetEmployeeByIdAsync(employeeNo);
+
+                if (employee == null)
+                {
+                    return NotFound(new { Message = $"Employee with EmployeeNo {employeeNo} not found." });
+                }
+
+                return Ok(employee);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving employee {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while retrieving the employee." });
+            }
         }
 
         // POST: api/employee
@@ -45,13 +74,24 @@ namespace EmployeeTimeTrackingBackend.Controllers
         {
             try
             {
+                if (employeeDto == null)
+                {
+                    return BadRequest(new { Message = "Employee data is required." });
+                }
+
                 var newEmployee = await _employeeService.AddEmployeeAsync(employeeDto);
-                return CreatedAtAction(nameof(GetEmployeeById), new { employeeNo = newEmployee.EmployeeNo },
-                    newEmployee);
+
+                return CreatedAtAction(nameof(GetEmployeeById), new { employeeNo = newEmployee.EmployeeNo }, newEmployee);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogWarning($"Validation error: {ex.Message}");
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"An unexpected error occurred while adding an employee: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while processing your request." });
             }
         }
 
@@ -59,128 +99,63 @@ namespace EmployeeTimeTrackingBackend.Controllers
         [HttpPut("{employeeNo}")]
         public async Task<IActionResult> UpdateEmployee(int employeeNo, [FromBody] EmployeeDto employeeDto)
         {
-            var updatedEmployee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
-            if (updatedEmployee == null)
+            try
             {
-                return NotFound();
-            }
+                if (employeeNo <= 0)
+                {
+                    return BadRequest(new { Message = "Invalid employee number provided." });
+                }
 
-            return Ok(updatedEmployee);
+                if (employeeDto == null)
+                {
+                    return BadRequest(new { Message = "Employee data is required." });
+                }
+
+                var updatedEmployee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
+
+                if (updatedEmployee == null)
+                {
+                    return NotFound(new { Message = $"Employee with EmployeeNo {employeeNo} not found." });
+                }
+
+                return Ok(updatedEmployee);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning($"Validation error while updating EmployeeNo {employeeNo}: {ex.Message}");
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"An unexpected error occurred while updating EmployeeNo {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while processing your request." });
+            }
         }
 
         // DELETE: api/employee/{id}
         [HttpDelete("{employeeNo}")]
         public async Task<IActionResult> DeleteEmployee(int employeeNo)
         {
-            var success = await _employeeService.DeleteEmployeeAsync(employeeNo);
-            if (!success)
+            try
             {
-                return NotFound();
-            }
-
-            return NoContent();
-        }
-
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
-        {
-            var employee = await _employeeService.LoginAsync(loginDto.employeeNo, loginDto.Password);
-            if (employee == null)
-            {
-                return Unauthorized("Invalid credentials.");
-            }
-
-            // If this is the first login, the user gets to change their password
-            if (employee.IsFirstLogin)
-            {
-                return Ok(new { Message = "Please change your password." });
-            }
-
-            // If it's not the first login, return a normal login process
-            return Ok(new { Message = "Login successful", Employee = employee });
-        }
-
-
-        // POST: api/employee/{id}/clock-in
-        [HttpPost("{employeeNo}/clock-in")]
-        public async Task<IActionResult> ClockIn(int employeeNo)
-        {
-            var (success, message) = await _employeeService.ClockInAsync(employeeNo);
-
-            if (!success)
-            {
-                if (message == "Employee not found.")
+                if (employeeNo <= 0)
                 {
-                    return NotFound(new { Message = message });
+                    return BadRequest(new { Message = "Invalid employee number provided." });
                 }
 
-                return BadRequest(new { Message = message });
+                var success = await _employeeService.DeleteEmployeeAsync(employeeNo);
+                if (!success)
+                {
+                    return NotFound(new { Message = $"Employee with EmployeeNo {employeeNo} not found." });
+                }
+
+                return NoContent();
             }
-
-            return Ok(new { Message = message });
-        }
-
-        // POST: api/employee/{id}/clock-out
-        [HttpPost("{employeeNo}/clock-out")]
-        public async Task<IActionResult> ClockOut(int employeeNo)
-        {
-            var success = await _employeeService.ClockOutAsync(employeeNo);
-            if (!success)
+            catch (Exception ex)
             {
-                return BadRequest("You are not clocked in.");
+                _logger.LogError($"Error deleting EmployeeNo {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while processing your request." });
             }
-
-            return Ok(new { Message = "Clocked out successfully" });
-        }
-
-        // GET: api/employee/{employeeNo}/clock-in-status
-        [HttpGet("{employeeNo}/clock-in-status")]
-        public async Task<IActionResult> GetClockInStatus(int employeeNo)
-        {
-            var isClockedIn = await _employeeService.IsClockedInAsync(employeeNo);
-            return Ok(new { isClockedIn });
-        }
-
-        // POST: api/employee/{employeeNo}/change-password
-        [HttpPost("{employeeNo}/change-password")]
-        public async Task<IActionResult> ChangePassword(int employeeNo, [FromBody] ChangePasswordDto request)
-        {
-            _logger.LogInformation($"Received ChangePassword request for EmployeeNo: {employeeNo}");
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogError("Validation failed for ChangePasswordDto: " + string.Join(", ",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return BadRequest(ModelState);
-            }
-
-            if (string.IsNullOrEmpty(request.NewPassword))
-            {
-                _logger.LogError("New password is empty.");
-                return BadRequest("New password is required.");
-            }
-
-            var employeeDto = await _employeeService.ChangePasswordAsync(employeeNo, request);
-            if (employeeDto == null)
-            {
-                _logger.LogError($"Employee with EmployeeNo {employeeNo} not found.");
-                return NotFound("Employee not found.");
-            }
-
-            
-            employeeDto.IsFirstLogin = false;
-
-            
-            var updatedEmployee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
-
-            if (updatedEmployee == null)
-            {
-                _logger.LogError($"Failed to update employee {employeeNo} after password change.");
-                return StatusCode(500, "Error updating employee details.");
-            }
-
-            _logger.LogInformation($"Password change successful for EmployeeNo: {employeeNo}");
-            return Ok(new { Message = "Password changed successfully" });
         }
     }
 }

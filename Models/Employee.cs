@@ -14,9 +14,7 @@ namespace EmployeeTimeTrackingBackend.Models
 
         [Required]
         public string LastName { get; set; }
-
-        // [Required]
-         // public string Username { get; set; }
+        
 
         [Required]
         public string CellPhoneNumber { get; set; }
