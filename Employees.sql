@@ -1,10 +1,7 @@
-CREATE DATABASE Employee-time-tracking;
- 
-
-USE [Employee-time-tracking]
+USE [employee-time-tracking]
 GO
 
-/****** Object:  Table [dbo].[Employees]    Script Date: 2025/01/21 15:01:39 ******/
+/****** Object:  Table [dbo].[Employees]    Script Date: 2025/01/30 14:51:13 ******/
 SET ANSI_NULLS ON
 GO
 
@@ -26,6 +23,8 @@ CREATE TABLE [dbo].[Employees](
     [ManagerId] [int] NULL,
     [IsFirstLogin] [bit] NOT NULL,
     [IsClockedIn] [bit] NULL,
+    [PasswordNeedsChange] [bit] NULL,
+    [LastPasswordChangeDate] [datetime] NULL,
     PRIMARY KEY CLUSTERED
 (
 [EmployeeNo] ASC
@@ -48,3 +47,5 @@ ALTER TABLE [dbo].[Employees] ADD  DEFAULT (getdate()) FOR [UpdatedAt]
 
 ALTER TABLE [dbo].[Employees] ADD  DEFAULT ((1)) FOR [IsFirstLogin]
     GO
+
+

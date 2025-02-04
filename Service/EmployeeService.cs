@@ -3,6 +3,8 @@ using AutoMapper;
 using EmployeeTimeTrackingBackend.Models;
 using Microsoft.EntityFrameworkCore;
 
+
+
 namespace EmployeeTimeTrackingBackend.Services
 {
     public interface IEmployeeService
@@ -18,11 +20,13 @@ namespace EmployeeTimeTrackingBackend.Services
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ILogger<EmployeeService> _logger;
 
-        public EmployeeService(AppDbContext context, IMapper mapper)
+        public EmployeeService(AppDbContext context, IMapper mapper, ILogger<EmployeeService> logger)
         {
             _context = context;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<EmployeeDto>> GetAllEmployeesAsync()
@@ -40,26 +44,23 @@ namespace EmployeeTimeTrackingBackend.Services
 
         public async Task<EmployeeDto> AddEmployeeAsync(EmployeeDto employeeDto)
         {
-            // Ensure PlainPassword is provided for new employee
-            if (string.IsNullOrEmpty(employeeDto.PlainPassword))
+            try
             {
-                throw new ArgumentException("PlainPassword is required for new employee.");
+                var newEmployee = _mapper.Map<Employee>(employeeDto);
+                string plainPassword = employeeDto.PlainPassword ?? GenerateRandomPassword();
+                string hashedPassword = HashPassword(plainPassword);
+                newEmployee.PasswordHash = hashedPassword;
+
+                _context.Employees.Add(newEmployee);
+                await _context.SaveChangesAsync();
+
+                return _mapper.Map<EmployeeDto>(newEmployee);
             }
-
-            var newEmployee = _mapper.Map<Employee>(employeeDto);
-
-            // Generate random password if it's not provided
-            string plainPassword = employeeDto.PlainPassword ?? GenerateRandomPassword();
-            string hashedPassword = HashPassword(plainPassword);
-
-            newEmployee.PasswordHash = hashedPassword;
-
-            _context.Employees.Add(newEmployee);
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine($"Plain password for {employeeDto.EmployeeNo}: {plainPassword}");
-
-            return _mapper.Map<EmployeeDto>(newEmployee);
+            catch (Exception ex)
+            {
+                _logger.LogError($"An error occurred while adding the employee: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<EmployeeDto> UpdateEmployeeAsync(int employeeNo, EmployeeDto employeeDto)
@@ -67,16 +68,13 @@ namespace EmployeeTimeTrackingBackend.Services
             var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeNo == employeeNo);
             if (employee == null) return null;
 
-            // // Only update password if PlainPassword is provided
             if (!string.IsNullOrEmpty(employeeDto.PlainPassword))
             {
                 employee.PasswordHash = HashPassword(employeeDto.PlainPassword);
             }
 
-            // Map the other fields
             _mapper.Map(employeeDto, employee);
             await _context.SaveChangesAsync();
-
             return _mapper.Map<EmployeeDto>(employee);
         }
 
@@ -87,10 +85,14 @@ namespace EmployeeTimeTrackingBackend.Services
 
             _context.Employees.Remove(employee);
             await _context.SaveChangesAsync();
-
             return true;
         }
-//refering to the comment from PR; resolving the issue of a password autogenerating
+
+        private string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password);
+        }
+
         private string GenerateRandomPassword()
         {
             const int passwordLength = 12;
@@ -104,11 +106,6 @@ namespace EmployeeTimeTrackingBackend.Services
             }
 
             return password.ToString();
-        }
-
-        private string HashPassword(string plainPassword)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(plainPassword);
         }
     }
 }
