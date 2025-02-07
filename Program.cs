@@ -28,6 +28,8 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IClockingService, ClockingService>();
 
 
 var app = builder.Build();
