@@ -1,4 +1,4 @@
-﻿using EmployeeTimeTrackingBackend.Models;
+﻿﻿using EmployeeTimeTrackingBackend.Models;
 using EmployeeTimeTrackingBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -80,25 +80,39 @@ namespace EmployeeTimeTrackingBackend.Controllers
 
             return NoContent();
         }
-
+        
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var employee = await _employeeService.LoginAsync(loginDto.Username, loginDto.Password);
+            // Fetch employee by employeeNo and verify the password
+            var employee = await _employeeService.LoginAsync(loginDto.employeeNo, loginDto.Password);
+    
             if (employee == null)
             {
+                // Return Unauthorized if employee not found or password invalid
                 return Unauthorized("Invalid credentials.");
             }
 
-            // If this is the first login, the user gets to change their password
+            // Check if it's the first login and ask user to change password
             if (employee.IsFirstLogin)
             {
-                return Ok(new { Message = "Please change your password." });
+                return Ok(new 
+                { 
+                    Message = "Please change your password.", employee.EmployeeNo // Send EmployeeNo for the frontend
+                });
             }
 
-            // If it's not the first login, return a normal login process
-            return Ok(new { Message = "Login successful", Employee = employee });
+            // Return a normal response if it's not the first login
+            return Ok(new 
+            { 
+                Message = "Login successful",
+                employee.EmployeeNo, 
+                Employee = employee 
+                
+            });
         }
+
+
 
 
         // POST: api/employee/{id}/clock-in

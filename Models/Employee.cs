@@ -37,9 +37,9 @@ namespace EmployeeTimeTrackingBackend.Models
         
         public bool IsFirstLogin { get; set; }  
         
-        public DateTime? LastPasswordChangeDate { get; set; } 
-        public bool PasswordNeedsChange { get; set; }
-        
+        // public DateTime? LastPasswordChangeDate { get; set; } 
+        // public bool PasswordNeedsChange { get; set; }
+        //
 
 
     }

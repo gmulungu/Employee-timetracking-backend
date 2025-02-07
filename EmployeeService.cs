@@ -12,7 +12,7 @@ namespace EmployeeTimeTrackingBackend.Services
         Task<EmployeeDto> AddEmployeeAsync(EmployeeDto employeeDto);
         Task<EmployeeDto> UpdateEmployeeAsync(int employeeNo, EmployeeDto employeeDto);
         Task<bool> DeleteEmployeeAsync(int employeeNo);
-        Task<Employee> LoginAsync(string username, string password);
+        Task<Employee> LoginAsync(int employeeNo, string password);
         Task<(bool success, string message)> ClockInAsync(int employeeNo);
         Task<bool> ClockOutAsync(int employeeNo);
         Task<EmployeeDto> ChangePasswordAsync(int employeeNo, ChangePasswordDto changePasswordDto); 
@@ -64,14 +64,16 @@ namespace EmployeeTimeTrackingBackend.Services
                 string hashedPassword = HashPassword(plainPassword);
                 newEmployee.PasswordHash = hashedPassword;
 
-               
+                Console.WriteLine($"Mapped EmployeeNo: {newEmployee.EmployeeNo}"); 
 
                 _context.Employees.Add(newEmployee);
                 await _context.SaveChangesAsync();
 
-                Console.WriteLine($"Plain password for {employeeDto.EmployeeNo}: {plainPassword}");
+                Console.WriteLine($"Plain password for {newEmployee.EmployeeNo}: {plainPassword}");
 
                 return _mapper.Map<EmployeeDto>(newEmployee);
+                
+                
             }
             catch (ArgumentException ex)
             {
@@ -152,39 +154,36 @@ namespace EmployeeTimeTrackingBackend.Services
         }
 
         // Login logic
-        public async Task<Employee> LoginAsync(string username, string password)
+        public async Task<Employee> LoginAsync(int employeeNo, string password)
         {
-            // Fetch the employee by username
-            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Username == username);
-            if (employee == null) return null; 
+            // Fetch the employee by employee number
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeNo == employeeNo);
+            if (employee == null) 
+            {
+                throw new UnauthorizedAccessException("Invalid credentials."); 
+            }
 
             try
             {
                 // Check if the password is valid
                 if (!BCrypt.Net.BCrypt.Verify(password, employee.PasswordHash))
                 {
-                    return null; 
+                    throw new UnauthorizedAccessException("Invalid credentials."); 
                 }
 
-                
-                if (employee.IsFirstLogin)
-                {
-                    return employee; 
-                }
-
-                return employee; 
+                return employee;
             }
             catch (BCrypt.Net.SaltParseException)
             {
-                // Rehash and save the new password hash 
+                // Rehash and save the new password hash
                 string newHash = BCrypt.Net.BCrypt.HashPassword(password);
                 employee.PasswordHash = newHash;
-                // Save changes to the database
-                await _context.SaveChangesAsync(); 
+                await _context.SaveChangesAsync();
 
                 return employee;
             }
         }
+
         
 
         // Clock-in logic
