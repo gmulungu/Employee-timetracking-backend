@@ -15,6 +15,8 @@ namespace EmployeeTimeTrackingBackend.Models
         [Required]
         public string LastName { get; set; }
         
+        public string? Username { get; set; }
+        
 
         [Required]
         public string CellPhoneNumber { get; set; }
@@ -35,9 +37,7 @@ namespace EmployeeTimeTrackingBackend.Models
         
         public bool IsFirstLogin { get; set; }  
         
-        // public DateTime? LastPasswordChangeDate { get; set; } 
-        // public bool PasswordNeedsChange { get; set; }
-        //
+      
 
 
     }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Employee-timetracking-backend-c#")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+add24ffb13cc323a3be99956ee535f576f9dc00e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+206d16f1b6b69a02ebd2a9bf12d09a4cfe351819")]
 [assembly: System.Reflection.AssemblyProductAttribute("Employee-timetracking-backend-c#")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Employee-timetracking-backend-c#")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

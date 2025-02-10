@@ -53,6 +53,7 @@ namespace EmployeeTimeTrackingBackend.Services
 
                 _context.Employees.Add(newEmployee);
                 await _context.SaveChangesAsync();
+                Console.WriteLine($"Plain password for {newEmployee.EmployeeNo}: {plainPassword}");
 
                 return _mapper.Map<EmployeeDto>(newEmployee);
             }
@@ -87,6 +88,7 @@ namespace EmployeeTimeTrackingBackend.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        
 
         private string HashPassword(string password)
         {
@@ -107,5 +109,7 @@ namespace EmployeeTimeTrackingBackend.Services
 
             return password.ToString();
         }
+        
+        
     }
 }

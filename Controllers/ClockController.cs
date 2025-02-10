@@ -73,30 +73,30 @@ namespace EmployeeTimeTrackingBackend.Controllers
             }
         }
 
-        // GET: api/employee/{employeeNo}/clock-in-status
-        // [HttpGet("{employeeNo}/clock-in-status")]
-        // public async Task<IActionResult> GetClockInStatus(int employeeNo)
-        // {
-        //     try
-        //     {
-        //         if (employeeNo <= 0)
-        //         {
-        //             return BadRequest(new { Message = "Invalid employee number provided." });
-        //         }
-        //
-        //         var status = await _clockingService.GetClockInStatusAsync(employeeNo);
-        //         if (status == null)
-        //         {
-        //             return NotFound(new { Message = "Employee not found." });
-        //         }
-        //
-        //         return Ok(new { ClockInStatus = status });
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError($"Error retrieving clock-in status for EmployeeNo {employeeNo}: {ex.Message}");
-        //         return StatusCode(500, new { Message = "An error occurred while processing your request." });
-        //     }
-        // }
+        //GET: api/employee/{employeeNo}/clock-in-status
+        [HttpGet("{employeeNo}/clock-in-status")]
+        public async Task<IActionResult> GetClockInStatus(int employeeNo)
+        {
+            try
+            {
+                if (employeeNo <= 0)
+                {
+                    return BadRequest(new { Message = "Invalid employee number provided." });
+                }
+        
+                var status = await _clockingService.GetClockInStatusAsync(employeeNo);
+                if (status == null)
+                {
+                    return NotFound(new { Message = "Employee not found." });
+                }
+        
+                return Ok(new { ClockInStatus = status });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving clock-in status for EmployeeNo {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while processing your request." });
+            }
+        }
     }
 }

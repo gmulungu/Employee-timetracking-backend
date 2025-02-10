@@ -11,6 +11,7 @@ namespace EmployeeTimeTrackingBackend.Services
     {
         Task<(bool success, string message)> ClockInAsync(int employeeNo);
         Task<bool> ClockOutAsync(int employeeNo);
+        Task<bool?> GetClockInStatusAsync(int employeeNo);
     }
 
     public class ClockingService : IClockingService
@@ -54,5 +55,37 @@ namespace EmployeeTimeTrackingBackend.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        
+        public async Task<bool?> GetClockInStatusAsync(int employeeNo)
+        {
+            try
+            {
+                if (employeeNo <= 0)
+                {
+                    throw new ArgumentException("Invalid employee number provided.", nameof(employeeNo));
+                }
+
+                
+                var employee = await _context.Employees
+                    .Where(e => e.EmployeeNo == employeeNo)
+                    .Select(e => e.IsClockedIn)
+                    .FirstOrDefaultAsync();
+
+               
+                return employee;
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning($"Validation error: {ex.Message}");
+                return null; 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving clock-in status for EmployeeNo {employeeNo}: {ex.Message}");
+                return null; 
+            }
+        }
+
+
     }
 }

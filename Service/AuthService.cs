@@ -53,11 +53,25 @@ namespace EmployeeTimeTrackingBackend.Services
                 var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeNo == employeeNo);
                 if (employee == null) return null;
 
+                // Update password
                 var newPasswordHash = HashPassword(changePasswordDto.NewPassword);
                 employee.PasswordHash = newPasswordHash;
+
+                // Ensure isFirstLogin is set to false
+                if (employee.IsFirstLogin)
+                {
+                    employee.IsFirstLogin = false;
+                }
+
+                // Save changes
                 await _context.SaveChangesAsync();
 
-                return new EmployeeDto { EmployeeNo = employee.EmployeeNo };
+                // Return updated employee details
+                return new EmployeeDto
+                {
+                    EmployeeNo = employee.EmployeeNo,
+                    IsFirstLogin = employee.IsFirstLogin 
+                };
             }
             catch (Exception ex)
             {
@@ -65,6 +79,7 @@ namespace EmployeeTimeTrackingBackend.Services
                 return null;
             }
         }
+
 
 
         private string HashPassword(string password)

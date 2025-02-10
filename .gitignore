@@ -1,6 +1,9 @@
 # Ignore Bin and Debug folders
 [Bb]in/
 [Dd]ebug/
+[Oo]bj/
+
+
 
 # Other common .gitignore entries for C# projects
 *.user
