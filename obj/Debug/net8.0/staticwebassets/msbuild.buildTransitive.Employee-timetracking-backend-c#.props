@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\Employee-timetracking-backend-c#.props" />
-</Project>

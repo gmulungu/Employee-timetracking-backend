@@ -1,5 +1,8 @@
-﻿using EmployeeTimeTrackingBackend.Services;
+﻿using EmployeeTimeTrackingBackend.Models;
+using EmployeeTimeTrackingBackend.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace EmployeeTimeTrackingBackend.Controllers
 {
@@ -8,12 +11,15 @@ namespace EmployeeTimeTrackingBackend.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
+        private readonly ILogger<EmployeeController> _logger;
 
-        public EmployeeController(IEmployeeService employeeService)
+        public EmployeeController(IEmployeeService employeeService, ILogger<EmployeeController> logger)
         {
             _employeeService = employeeService;
+            _logger = logger;
         }
 
+        // GET: api/employee
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees()
         {
@@ -24,82 +30,117 @@ namespace EmployeeTimeTrackingBackend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while fetching employees.", Error = ex.Message });
+                _logger.LogError($"Error retrieving employees: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while retrieving employees." });
             }
         }
 
+        // GET: api/employee/{employeeNo}
         [HttpGet("{employeeNo}")]
-        public async Task<IActionResult> GetEmployee(int employeeNo)
+        public async Task<IActionResult> GetEmployeeById(int employeeNo)
         {
             try
             {
+                if (employeeNo <= 0)
+                {
+                    return BadRequest(new { Message = "Invalid employee number provided." });
+                }
+
                 var employee = await _employeeService.GetEmployeeByIdAsync(employeeNo);
                 if (employee == null)
                 {
-                    return NotFound(new { Message = "Employee not found" });
+                    return NotFound(new { Message = "Employee not found." });
                 }
+
                 return Ok(employee);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while fetching the employee.", Error = ex.Message });
+                _logger.LogError($"Error retrieving employee {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while retrieving the employee." });
             }
         }
 
+        // POST: api/employee
         [HttpPost]
         public async Task<IActionResult> AddEmployee([FromBody] EmployeeDto employeeDto)
         {
             try
             {
-                var employee = await _employeeService.AddEmployeeAsync(employeeDto);
-                return Ok(new { Message = "Employee added successfully", EmployeeNo = employee.EmployeeNo });
+                if (employeeDto == null)
+                {
+                    return BadRequest(new { Message = "Invalid employee data provided." });
+                }
+
+                var newEmployee = await _employeeService.AddEmployeeAsync(employeeDto);
+                return CreatedAtAction(nameof(GetEmployeeById), new { employeeNo = newEmployee.EmployeeNo }, newEmployee);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning($"Validation error while adding employee: {ex.Message}");
+                return BadRequest(new { Message = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while adding the employee.", Error = ex.Message });
+                _logger.LogError($"Error adding employee: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while adding the employee." });
             }
         }
 
+        // PUT: api/employee/{employeeNo}
         [HttpPut("{employeeNo}")]
         public async Task<IActionResult> UpdateEmployee(int employeeNo, [FromBody] EmployeeDto employeeDto)
         {
             try
             {
-                
-                if (string.IsNullOrEmpty(employeeDto.PlainPassword))
+                if (employeeNo <= 0)
                 {
-                    employeeDto.PlainPassword = null;  
+                    return BadRequest(new { Message = "Invalid employee number provided." });
                 }
 
-                var employee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
-                if (employee == null)
+                if (employeeDto == null)
                 {
-                    return NotFound(new { Message = "Employee not found" });
+                    return BadRequest(new { Message = "Invalid employee data provided." });
                 }
-                return Ok(new { Message = "Employee updated successfully" });
+
+                var updatedEmployee = await _employeeService.UpdateEmployeeAsync(employeeNo, employeeDto);
+                if (updatedEmployee == null)
+                {
+                    return NotFound(new { Message = "Employee not found." });
+                }
+
+                return Ok(updatedEmployee);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while updating the employee.", Error = ex.Message });
+                _logger.LogError($"Error updating employee {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while updating the employee." });
             }
         }
 
-
+        // DELETE: api/employee/{employeeNo}
         [HttpDelete("{employeeNo}")]
         public async Task<IActionResult> DeleteEmployee(int employeeNo)
         {
             try
             {
-                var result = await _employeeService.DeleteEmployeeAsync(employeeNo);
-                if (!result)
+                if (employeeNo <= 0)
                 {
-                    return NotFound(new { Message = "Employee not found" });
+                    return BadRequest(new { Message = "Invalid employee number provided." });
                 }
-                return Ok(new { Message = "Employee deleted successfully" });
+
+                var success = await _employeeService.DeleteEmployeeAsync(employeeNo);
+                if (!success)
+                {
+                    return NotFound(new { Message = "Employee not found." });
+                }
+
+                return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while deleting the employee.", Error = ex.Message });
+                _logger.LogError($"Error deleting employee {employeeNo}: {ex.Message}");
+                return StatusCode(500, new { Message = "An error occurred while deleting the employee." });
             }
         }
     }
